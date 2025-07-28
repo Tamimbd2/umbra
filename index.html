@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ESP32 Control Panel | Umbrashare Project By Tamim</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #141e30, #243b55);
+      color: #eee;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .panel {
+      background: #1f2937;
+      border-radius: 16px;
+      padding: 30px 40px;
+      box-shadow: 0 0 20px #0ff;
+      width: 350px;
+      text-align: center;
+    }
+    .panel h2 {
+      color: #0ff;
+      margin-bottom: 30px;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+    }
+    .switch-group {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      margin-bottom: 25px;
+    }
+    /* Switch styling */
+    .switch {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #273444;
+      border-radius: 30px;
+      padding: 12px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    .switch span {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .switch input {
+      display: none;
+    }
+    .slider {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      background: #e74c3c;
+      border-radius: 50px;
+      transition: background-color 0.4s ease;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      top: 3px;
+      background-color: #ecf0f1;
+      border-radius: 50%;
+      transition: transform 0.4s ease;
+    }
+    .switch input:checked + .slider {
+      background-color: #00b894;
+    }
+    .switch input:checked + .slider::before {
+      transform: translateX(24px);
+    }
+    /* Blink Button */
+    .blink-btn {
+      background: #0ff;
+      color: #1f2937;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 0;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #0ff;
+      transition: background-color 0.3s ease;
+    }
+    .blink-btn:hover {
+      background-color: #00d9d9;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>Umbrashare Project By Tamim</h2>
+    <div class="switch-group">
+      <label class="switch" for="relayToggle">
+        <span>Take Umbrella</span>
+        <input type="checkbox" id="relayToggle" onchange="toggleRelay()" />
+        <div class="slider"></div>
+      </label>
+    </div>
+    <button class="blink-btn" onclick="setBlink()">QR Code Scan</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    // Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://esp32t-fbb3f-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const relayToggle = document.getElementById('relayToggle');
+
+    function toggleRelay() {
+      const status = relayToggle.checked ? "on" : "off";
+      db.ref("/relay").set(status);
+    }
+
+    function setBlink() {
+      db.ref("/blink").set("yes");
+    }
+
+    // Sync UI with Firebase realtime values
+    db.ref("/relay").on("value", snapshot => {
+      relayToggle.checked = snapshot.val() === "on";
+    });
+  </script>
+</body>
+</html>
