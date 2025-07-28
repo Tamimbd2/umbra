@@ -14,6 +14,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
     }
     .panel {
       background: #1f2937;
@@ -28,7 +29,6 @@
       margin-bottom: 30px;
       font-weight: 700;
       font-size: 1.8rem;
-      letter-spacing: 1px;
     }
     .switch-group {
       display: flex;
@@ -36,7 +36,6 @@
       gap: 25px;
       margin-bottom: 25px;
     }
-    /* Switch styling */
     .switch {
       position: relative;
       display: flex;
@@ -47,7 +46,6 @@
       padding: 12px 20px;
       cursor: pointer;
       user-select: none;
-      transition: background-color 0.3s ease;
     }
     .switch span {
       font-size: 1.1rem;
@@ -81,8 +79,7 @@
     .switch input:checked + .slider::before {
       transform: translateX(24px);
     }
-    /* Blink Button */
-    .blink-btn {
+    .qr-btn {
       background: #0ff;
       color: #1f2937;
       font-weight: 700;
@@ -94,9 +91,15 @@
       cursor: pointer;
       box-shadow: 0 0 15px #0ff;
       transition: background-color 0.3s ease;
+      margin-top: 20px;
     }
-    .blink-btn:hover {
+    .qr-btn:hover {
       background-color: #00d9d9;
+    }
+    #qr-reader {
+      width: 100%;
+      margin-top: 20px;
+      display: none;
     }
   </style>
 </head>
@@ -110,15 +113,19 @@
         <div class="slider"></div>
       </label>
     </div>
-    <button class="blink-btn" onclick="setBlink()">QR Code Scan</button>
+    <button class="qr-btn" onclick="startQRScan()">📷 Scan QR Code</button>
+    <div id="qr-reader"></div>
   </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
+  <!-- QR Code Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 
   <script>
-    // Replace with your Firebase config
+    // Firebase Config (Replace with your actual values)
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -131,7 +138,6 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     const relayToggle = document.getElementById('relayToggle');
 
     function toggleRelay() {
@@ -139,14 +145,38 @@
       db.ref("/relay").set(status);
     }
 
-    function setBlink() {
-      db.ref("/blink").set("yes");
-    }
-
-    // Sync UI with Firebase realtime values
     db.ref("/relay").on("value", snapshot => {
       relayToggle.checked = snapshot.val() === "on";
     });
+
+    function startQRScan() {
+      const qrReader = document.getElementById("qr-reader");
+      qrReader.style.display = "block";
+
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: 250 };
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText, decodedResult) => {
+          console.log(`QR Code scanned: ${decodedText}`);
+          if (decodedText.trim() === "umbra123") {
+            db.ref("/relay").set("on");
+            alert("✅ Valid QR. Umbrella Unlocked!");
+            html5QrCode.stop();
+            qrReader.style.display = "none";
+          } else {
+            alert("❌ Invalid QR Code");
+          }
+        },
+        (errorMessage) => {
+          console.warn(`QR Code scan error: ${errorMessage}`);
+        }
+      ).catch(err => {
+        alert("Camera error: " + err);
+      });
+    }
   </script>
 </body>
 </html>
